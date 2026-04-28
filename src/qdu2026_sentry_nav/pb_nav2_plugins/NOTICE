@@ -1,0 +1,5 @@
+Copyright 2025 Lihan Chen
+
+The Initial Developer of some parts of the repository (`BackUpFreeSpace`, `IntensityVoxelLayer`), which are copied from, derived from, or
+inspired by @PolarisXQ [SCURM_SentryNavigation](https://github.com/PolarisXQ/SCURM_SentryNavigation/tree/master/nav2_plugins/behavior_ext_plugins), @ros-navigation [navigation2](https://github.com/ros-navigation).
+All Rights Reserved.

@@ -1,0 +1,19 @@
+# Static TF from front_mid360 to odin1_frame
+# Adjust these values based on your robot's physical configuration
+
+static_tf_publisher:
+  ros__parameters:
+    use_sim_time: False
+    # Translation: [x, y, z] in meters
+    translation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    # Rotation: [roll, pitch, yaw] in radians
+    rotation:
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+    # Frame IDs
+    parent_frame: "odin1_frame"
+    child_frame: "front_mid360"
