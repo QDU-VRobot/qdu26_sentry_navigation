@@ -23,6 +23,7 @@
 #include "message_filters/synchronizer.h"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -43,8 +44,10 @@ private:
     const nav_msgs::msg::Odometry::ConstSharedPtr & odometry,
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr & laserCloud2);
 
-  tf2::Transform computeOdomToChassis(const tf2::Transform & tf_odom_to_lidar);
-  tf2::Transform computeOdomToRobotBase(const tf2::Transform & tf_odom_to_lidar);
+  tf2::Transform computeOdomToChassis(
+    const tf2::Transform & tf_odom_to_lidar, const rclcpp::Time & stamp);
+  tf2::Transform computeOdomToRobotBase(
+    const tf2::Transform & tf_odom_to_lidar, const rclcpp::Time & stamp);
 
   tf2::Transform getTransform(
     const std::string & target_frame, const std::string & source_frame, const rclcpp::Time & time);
@@ -56,6 +59,8 @@ private:
   void publishOdometry(
     const tf2::Transform & transform, std::string parent_frame, const std::string & child_frame,
     const rclcpp::Time & stamp);
+
+  void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr & msg);
 
   std::string lidar_frame_;
   std::string base_frame_;
@@ -78,6 +83,15 @@ private:
   std::unique_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
 
   tf2::Transform tf_lidar_to_robot_base_;
+
+  // Gimbal yaw compensation via IMU
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  double yaw_compensation_factor_{0.0};
+  double velocity_filter_alpha_{0.2};
+  double filtered_yaw_velocity_{0.0};
+
+  tf2::Transform last_valid_lidar_to_chassis_{tf2::Transform::getIdentity()};
+  bool has_valid_lidar_to_chassis_{false};
 };
 
 }  // namespace sensor_scan_generation

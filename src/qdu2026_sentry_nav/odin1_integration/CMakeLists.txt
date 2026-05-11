@@ -14,6 +14,8 @@ find_package(tf2_eigen REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -66,10 +68,34 @@ ament_target_dependencies(odometry_to_tf_node
   geometry_msgs
 )
 
+# Goal Status Node
+add_executable(goal_status_node
+  src/goal_status_node.cpp
+)
+ament_target_dependencies(goal_status_node
+  rclcpp
+  std_msgs
+  action_msgs
+)
+
+# Approach Velocity Controller
+add_executable(approach_velocity_controller
+  src/approach_velocity_controller.cpp
+)
+ament_target_dependencies(approach_velocity_controller
+  rclcpp
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+)
+
 install(TARGETS
   tf_inverter_node
   pointcloud_fusion_node
   odometry_to_tf_node
+  goal_status_node
+  approach_velocity_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 

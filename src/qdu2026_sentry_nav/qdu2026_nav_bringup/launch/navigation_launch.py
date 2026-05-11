@@ -45,7 +45,6 @@ def generate_launch_description():
         "planner_server",
         "behavior_server",
         "bt_navigator",
-        "waypoint_follower",
         "velocity_smoother",
     ]
 
@@ -148,16 +147,6 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(["not ", use_composition])),
         actions=[
             Node(
-                package="loam_interface",
-                executable="loam_interface_node",
-                name="loam_interface",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-            ),
-            Node(
                 package="sensor_scan_generation",
                 executable="sensor_scan_generation_node",
                 name="sensor_scan_generation",
@@ -236,16 +225,6 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="nav2_waypoint_follower",
-                executable="waypoint_follower",
-                name="waypoint_follower",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-            ),
-            Node(
                 package="nav2_velocity_smoother",
                 executable="velocity_smoother",
                 name="velocity_smoother",
@@ -278,12 +257,6 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         target_container=container_name_full,
         composable_node_descriptions=[
-            ComposableNode(
-                package="loam_interface",
-                plugin="loam_interface::LoamInterfaceNode",
-                name="loam_interface",
-                parameters=[configured_params],
-            ),
             ComposableNode(
                 package="sensor_scan_generation",
                 plugin="sensor_scan_generation::SensorScanGenerationNode",
@@ -332,12 +305,6 @@ def generate_launch_description():
                 package="nav2_bt_navigator",
                 plugin="nav2_bt_navigator::BtNavigator",
                 name="bt_navigator",
-                parameters=[configured_params],
-            ),
-            ComposableNode(
-                package="nav2_waypoint_follower",
-                plugin="nav2_waypoint_follower::WaypointFollower",
-                name="waypoint_follower",
                 parameters=[configured_params],
             ),
             ComposableNode(

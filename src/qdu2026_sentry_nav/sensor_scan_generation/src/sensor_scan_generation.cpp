@@ -26,10 +26,14 @@ SensorScanGenerationNode::SensorScanGenerationNode(const rclcpp::NodeOptions & o
   this->declare_parameter<std::string>("lidar_frame", "");
   this->declare_parameter<std::string>("base_frame", "");
   this->declare_parameter<std::string>("robot_base_frame", "");
+  this->declare_parameter<double>("yaw_compensation_factor", 0.0);
+  this->declare_parameter<double>("velocity_filter_alpha", 0.2);
 
   this->get_parameter("lidar_frame", lidar_frame_);
   this->get_parameter("base_frame", base_frame_);
   this->get_parameter("robot_base_frame", robot_base_frame_);
+  this->get_parameter("yaw_compensation_factor", yaw_compensation_factor_);
+  this->get_parameter("velocity_filter_alpha", velocity_filter_alpha_);
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
@@ -62,37 +66,77 @@ SensorScanGenerationNode::SensorScanGenerationNode(const rclcpp::NodeOptions & o
   sync_->registerCallback(std::bind(
     &SensorScanGenerationNode::laserCloudAndOdometryHandler, this, std::placeholders::_1,
     std::placeholders::_2));
+
+  imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+    "/livox/imu", rclcpp::SensorDataQoS(),
+    std::bind(&SensorScanGenerationNode::imuCallback, this, std::placeholders::_1));
+}
+
+void SensorScanGenerationNode::imuCallback(
+  const sensor_msgs::msg::Imu::ConstSharedPtr & msg)
+{
+  double raw_yaw_velocity = msg->angular_velocity.z;
+
+  filtered_yaw_velocity_ =
+    velocity_filter_alpha_ * raw_yaw_velocity +
+    (1.0 - velocity_filter_alpha_) * filtered_yaw_velocity_;
 }
 
 tf2::Transform SensorScanGenerationNode::computeOdomToChassis(
-  const tf2::Transform & tf_odom_to_lidar)
+  const tf2::Transform & tf_odom_to_lidar, const rclcpp::Time & /*stamp*/)
 {
   auto tf_lidar_to_chassis = getTransform(lidar_frame_, base_frame_, rclcpp::Time(0));
+
+  bool is_identity =
+    tf_lidar_to_chassis.getOrigin().length2() < 1e-10 &&
+    std::abs(tf_lidar_to_chassis.getRotation().getW() - 1.0) < 1e-6;
+
+  if (is_identity && !has_valid_lidar_to_chassis_) {
+    return tf_odom_to_lidar;
+  }
+
+  if (!is_identity) {
+    last_valid_lidar_to_chassis_ = tf_lidar_to_chassis;
+    has_valid_lidar_to_chassis_ = true;
+  } else {
+    tf_lidar_to_chassis = last_valid_lidar_to_chassis_;
+  }
 
   double roll, pitch, yaw;
   tf2::Matrix3x3(tf_lidar_to_chassis.getRotation()).getRPY(roll, pitch, yaw);
   tf2::Quaternion yaw_only;
   yaw_only.setRPY(0, 0, yaw);
-  tf_lidar_to_chassis.setOrigin(tf2::Vector3(0, 0, 0));
+  auto origin = tf_lidar_to_chassis.getOrigin();
+  origin.setZ(0.0);
+  tf_lidar_to_chassis.setOrigin(origin);
   tf_lidar_to_chassis.setRotation(yaw_only);
 
   auto tf_odom_to_chassis = tf_odom_to_lidar * tf_lidar_to_chassis;
-  auto origin = tf_odom_to_chassis.getOrigin();
-  origin.setZ(0.0);
-  tf_odom_to_chassis.setOrigin(origin);
+  auto final_origin = tf_odom_to_chassis.getOrigin();
+  final_origin.setZ(0.0);
+  tf_odom_to_chassis.setOrigin(final_origin);
+
+  double comp_angle = filtered_yaw_velocity_ * yaw_compensation_factor_;
+  tf2::Quaternion comp_q;
+  comp_q.setRPY(0, 0, comp_angle);
+  tf_odom_to_chassis.setRotation(tf_odom_to_chassis.getRotation() * comp_q);
+
   return tf_odom_to_chassis;
 }
 
 tf2::Transform SensorScanGenerationNode::computeOdomToRobotBase(
-  const tf2::Transform & tf_odom_to_lidar)
+  const tf2::Transform & tf_odom_to_lidar, const rclcpp::Time & stamp)
 {
-  tf_lidar_to_robot_base_ = getTransform(lidar_frame_, robot_base_frame_, rclcpp::Time(0));
+  auto lookup_time = stamp - rclcpp::Duration(0, 5000000);
+  tf_lidar_to_robot_base_ = getTransform(lidar_frame_, robot_base_frame_, lookup_time);
 
   double roll, pitch, yaw;
   tf2::Matrix3x3(tf_lidar_to_robot_base_.getRotation()).getRPY(roll, pitch, yaw);
   tf2::Quaternion yaw_only;
   yaw_only.setRPY(0, 0, yaw);
-  tf_lidar_to_robot_base_.setOrigin(tf2::Vector3(0, 0, 0));
+  auto origin = tf_lidar_to_robot_base_.getOrigin();
+  origin.setZ(0.0);
+  tf_lidar_to_robot_base_.setOrigin(origin);
   tf_lidar_to_robot_base_.setRotation(yaw_only);
 
   return tf_odom_to_lidar * tf_lidar_to_robot_base_;
@@ -104,14 +148,14 @@ void SensorScanGenerationNode::odometryHandler(
   tf2::Transform tf_odom_to_lidar;
   tf2::fromMsg(odometry_msg->pose.pose, tf_odom_to_lidar);
 
-  auto tf_odom_to_chassis = computeOdomToChassis(tf_odom_to_lidar);
-  auto tf_odom_to_robot_base = computeOdomToRobotBase(tf_odom_to_lidar);
+  const auto & stamp = odometry_msg->header.stamp;
+  auto tf_odom_to_chassis = computeOdomToChassis(tf_odom_to_lidar, stamp);
+  auto tf_odom_to_robot_base = computeOdomToRobotBase(tf_odom_to_lidar, stamp);
 
   publishTransform(
-    tf_odom_to_chassis, odometry_msg->header.frame_id, base_frame_, odometry_msg->header.stamp);
+    tf_odom_to_chassis, odometry_msg->header.frame_id, base_frame_, stamp);
   publishOdometry(
-    tf_odom_to_robot_base, odometry_msg->header.frame_id, robot_base_frame_,
-    odometry_msg->header.stamp);
+    tf_odom_to_robot_base, odometry_msg->header.frame_id, robot_base_frame_, stamp);
 }
 
 void SensorScanGenerationNode::laserCloudAndOdometryHandler(
@@ -121,8 +165,10 @@ void SensorScanGenerationNode::laserCloudAndOdometryHandler(
   tf2::Transform tf_odom_to_lidar;
   tf2::fromMsg(odometry_msg->pose.pose, tf_odom_to_lidar);
 
+  auto tf_odom_to_chassis = computeOdomToChassis(tf_odom_to_lidar, odometry_msg->header.stamp);
+
   sensor_msgs::msg::PointCloud2 out;
-  pcl_ros::transformPointCloud(lidar_frame_, tf_odom_to_lidar.inverse(), *pcd_msg, out);
+  pcl_ros::transformPointCloud(base_frame_, tf_odom_to_chassis.inverse(), *pcd_msg, out);
   pub_laser_cloud_->publish(out);
 }
 
@@ -131,10 +177,21 @@ tf2::Transform SensorScanGenerationNode::getTransform(
 {
   try {
     auto transform_stamped = tf_buffer_->lookupTransform(
-      target_frame, source_frame, time, rclcpp::Duration::from_seconds(0.5));
+      target_frame, source_frame, time, rclcpp::Duration::from_seconds(0.02));
     tf2::Transform transform;
     tf2::fromMsg(transform_stamped.transform, transform);
     return transform;
+  } catch (tf2::ExtrapolationException &) {
+    try {
+      auto transform_stamped = tf_buffer_->lookupTransform(
+        target_frame, source_frame, rclcpp::Time(0));
+      tf2::Transform transform;
+      tf2::fromMsg(transform_stamped.transform, transform);
+      return transform;
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_WARN(this->get_logger(), "TF fallback failed: %s. Returning identity.", ex.what());
+      return tf2::Transform::getIdentity();
+    }
   } catch (tf2::TransformException & ex) {
     RCLCPP_WARN(this->get_logger(), "TF lookup failed: %s. Returning identity.", ex.what());
     return tf2::Transform::getIdentity();

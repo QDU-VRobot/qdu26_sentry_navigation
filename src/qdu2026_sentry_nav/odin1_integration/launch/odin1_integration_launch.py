@@ -51,9 +51,19 @@ def generate_launch_description():
         }]
     )
 
+    # Goal Status Node
+    goal_status_node = Node(
+        package="odin1_integration",
+        executable="goal_status_node",
+        name="goal_status",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}]
+    )
+
     ld = LaunchDescription()
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(tf_inverter_node)
     ld.add_action(pointcloud_fusion_node)
+    ld.add_action(goal_status_node)
 
     return ld

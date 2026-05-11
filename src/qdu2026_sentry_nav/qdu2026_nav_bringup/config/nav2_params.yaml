@@ -11,12 +11,34 @@ livox_ros_driver2:
     cmdline_input_bd_code: livox0000000001
     lvx_file_path: ""
 
+pointcloud_fusion:
+  ros__parameters:
+    odin1_topic: "odin1/cloud_raw"
+    mid360_topic: "/livox/lidar"
+    output_topic: "fused_pointcloud"
+    output_frame: "base_footprint"
+    robot_frame: "base_footprint"
+    enable_deskew: true
+    allow_latest_tf_fallback: true
+    tf_future_tolerance_sec: 0.30
+    mid360_stamp_offset_sec: 0.0
+    max_sync_diff_sec: 0.11
+    mid360_queue_size: 5
+    publish_without_mid360: true
+    publish_reliable: true
+    self_filter_half_x: 0.35
+    self_filter_half_y: 0.35
+    self_filter_height: 0.6
+    self_filter_min_z: -0.4
+
 sensor_scan_generation:
   ros__parameters:
     use_sim_time: False
     lidar_frame: "odin1_base_link"
     base_frame: "base_footprint"
     robot_base_frame: "gimbal_yaw"
+    yaw_compensation_factor: 0.25                # 补偿系数
+    velocity_filter_alpha: 0.28                  # IMU角速度低通滤波系数 (0~1)，越小越平滑
 
 terrain_analysis:
   ros__parameters:
@@ -70,13 +92,15 @@ terrain_analysis_ext:
 fake_vel_transform:
   ros__parameters:
     use_sim_time: False
+    odom_frame: "odom"
+    chassis_frame: "base_footprint"
     odom_topic: "odometry"
     robot_base_frame: "gimbal_yaw"
     fake_robot_base_frame: "gimbal_yaw_fake"
     input_cmd_vel_topic: "cmd_vel_nav2_result"
     output_cmd_vel_topic: "cmd_vel"
     cmd_spin_topic: "cmd_spin"
-    init_spin_speed: 0.0
+    init_spin_speed: -0.5
 
 pointcloud_to_laserscan:
   ros__parameters:
@@ -93,6 +117,10 @@ pointcloud_to_laserscan:
     range_min: 1.1
     range_max: 10.0
     use_inf: true
+    qos_overrides:
+      /obstacle_scan:
+        publisher:
+          reliability: reliable
 
 slam_toolbox:
   ros__parameters:
@@ -252,7 +280,7 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.4
+      xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 6.5
     FollowPath:
       plugin: "pb_omni_pid_pursuit_controller::OmniPidPursuitController"
@@ -273,10 +301,10 @@ controller_server:
       use_interpolation: false
       use_rotate_to_heading: false
       use_rotate_to_heading_treshold: 0.1
-      min_approach_linear_velocity: 0.5
-      approach_velocity_scaling_dist: 1.0
-      v_linear_min: -0.5
-      v_linear_max: 0.5
+      min_approach_linear_velocity: 0.1
+      approach_velocity_scaling_dist: 2.0
+      v_linear_min: -1.0
+      v_linear_max: 1.0
       v_angular_min: -0.2
       v_angular_max: 0.2
       curvature_min: 0.4                                # 低曲率阈值，低于此值不减速。
@@ -298,7 +326,7 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.05
-      robot_radius: 0.1
+      robot_radius: 0.15
       plugins: ["static_layer", "intensity_voxel_layer", "inflation_layer"]
       intensity_voxel_layer:
         plugin: pb_nav2_costmap_2d::IntensityVoxelLayer
@@ -312,8 +340,8 @@ local_costmap:
         unknown_threshold: 5
         z_resolution: 0.05
         z_voxels: 16
-        min_obstacle_height: 0.05
-        max_obstacle_height: 2.0
+        min_obstacle_height: 0.2
+        max_obstacle_height: 0.35
         min_obstacle_intensity: 0.1
         max_obstacle_intensity: 2.0
         observation_sources: terrain_map
@@ -322,9 +350,9 @@ local_costmap:
           # '<robot_namespace>' keyword shall be replaced with 'namespace' where user defined.
           # It doesn't need to start with '/'
           topic: <robot_namespace>/terrain_map
-          sensor_frame: front_mid360
-          min_obstacle_height: 0.05
-          max_obstacle_height: 2.0
+          sensor_frame: base_footprint
+          min_obstacle_height: 0.2
+          max_obstacle_height: 0.35
           obstacle_max_range: 20.0
           obstacle_min_range: 0.0
       static_layer:
@@ -333,7 +361,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 8.0
-        inflation_radius: 0.4
+        inflation_radius: 0.55
       always_send_full_costmap: False
 
 global_costmap:
@@ -344,7 +372,7 @@ global_costmap:
       publish_frequency: 2.0
       global_frame: map
       robot_base_frame: gimbal_yaw_fake
-      robot_radius: 0.1
+      robot_radius: 0.15
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "intensity_voxel_layer", "inflation_layer"]
@@ -360,8 +388,8 @@ global_costmap:
         unknown_threshold: 5
         z_resolution: 0.05
         z_voxels: 16
-        min_obstacle_height: 0.05
-        max_obstacle_height: 2.0
+        min_obstacle_height: 0.2
+        max_obstacle_height: 0.35
         min_obstacle_intensity: 0.1
         max_obstacle_intensity: 2.0
         observation_sources: terrain_map_ext
@@ -370,9 +398,9 @@ global_costmap:
           # '<robot_namespace>' keyword shall be replaced with 'namespace' where user defined.
           # It doesn't need to start with '/'
           topic: <robot_namespace>/terrain_map_ext
-          sensor_frame: front_mid360
-          min_obstacle_height: 0.05
-          max_obstacle_height: 2.0
+          sensor_frame: base_footprint
+          min_obstacle_height: 0.2
+          max_obstacle_height: 0.35
           obstacle_max_range: 20.0
           obstacle_min_range: 0.0
       static_layer:
@@ -381,7 +409,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 15.0
-        inflation_radius: 0.3
+        inflation_radius: 0.55
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -470,14 +498,20 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.5, 0.5]
-    min_velocity: [-0.5, -0.5, -0.5]
+    odom_duration: 0.1
+    min_velocity: [-1.0,-1.0 ,-0.6]
+    max_velocity: [1.0, 1.0, 0.6]
     max_accel: [0.8, 0.8, 0.8]
     max_decel: [-1.5, -1.5, -1.0]
     odom_topic: "odometry"
-    odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+
+approach_velocity_controller:
+  ros__parameters:
+    slow_down_distance: 0.5
+    min_speed: 0.3
+    normal_speed: 1.0
 
 
 

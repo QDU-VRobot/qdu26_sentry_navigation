@@ -116,41 +116,6 @@ def generate_launch_description():
         "log_level", default_value="info", description="log level"
     )
 
-    # Odin1 integration: TF inverter (DISABLED - Odin1 already publishes correct TF direction)
-    # start_odin1_tf_inverter_node = Node(
-    #     package="odin1_integration",
-    #     executable="tf_inverter_node",
-    #     name="tf_inverter",
-    #     output="screen",
-    #     respawn=use_respawn,
-    #     respawn_delay=2.0,
-    #     parameters=[
-    #         {"use_sim_time": use_sim_time},
-    #         {"source_frame": "odom"},
-    #         {"target_frame": "map"},
-    #         {"inverted_source_frame": "map"},
-    #         {"inverted_target_frame": "odom"},
-    #         {"publish_rate": 20.0},
-    #     ],
-    #     arguments=["--ros-args", "--log-level", log_level],
-    # )
-
-    # Odin1 odometry_to_tf_node DISABLED:
-    # odom → odin1_base_link TF conflicts with static TF front_mid360 → odin1_base_link
-    # sensor_scan_generation reads odometry pose directly and broadcasts odom → base_footprint
-    # start_odin1_odom_to_tf_node = Node(
-    #     package="odin1_integration",
-    #     executable="odometry_to_tf_node",
-    #     name="odin1_odom_to_tf",
-    #     output="screen",
-    #     respawn=use_respawn,
-    #     respawn_delay=2.0,
-    #     parameters=[
-    #         {"use_sim_time": use_sim_time},
-    #         {"odom_topic": "/odin1/odometry"},
-    #     ],
-    #     arguments=["--ros-args", "--log-level", log_level],
-    # )
 
     start_pointcloud_fusion_node = Node(
         package="odin1_integration",
@@ -160,12 +125,35 @@ def generate_launch_description():
         respawn=use_respawn,
         respawn_delay=2.0,
         parameters=[
+            configured_params,
             {"use_sim_time": use_sim_time},
             {"odin1_topic": "odin1/cloud_raw"},
             {"mid360_topic": "/livox/lidar"},
             {"output_topic": "fused_cloud_slam"},
-            {"output_frame": "odin1_base_link"},
+            {"output_frame": "odom"},
+            {"robot_frame": "base_footprint"},
         ],
+        arguments=["--ros-args", "--log-level", log_level],
+    )
+
+    start_goal_status_node = Node(
+        package="odin1_integration",
+        executable="goal_status_node",
+        name="goal_status_node",
+        output="screen",
+        respawn=use_respawn,
+        respawn_delay=2.0,
+        arguments=["--ros-args", "--log-level", log_level],
+    )
+
+    start_approach_velocity_controller = Node(
+        package="odin1_integration",
+        executable="approach_velocity_controller",
+        name="approach_velocity_controller",
+        output="screen",
+        respawn=use_respawn,
+        respawn_delay=2.0,
+        parameters=[configured_params],
         arguments=["--ros-args", "--log-level", log_level],
     )
 
@@ -244,6 +232,8 @@ def generate_launch_description():
     # Add the actions to launch all of the localiztion nodes
     # ld.add_action(start_odin1_odom_to_tf_node)  # disabled: conflicts with static TF
     ld.add_action(start_pointcloud_fusion_node)
+    ld.add_action(start_goal_status_node)
+    ld.add_action(start_approach_velocity_controller)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 
