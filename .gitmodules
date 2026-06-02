@@ -1,23 +1,21 @@
+[submodule "src/qdu2026_sentry_nav/livox_ros_driver2"]
+	path = src/qdu2026_sentry_nav/livox_ros_driver2
+	url = https://github.com/SMBU-PolarBear-Robotics-Team/livox_ros_driver2.git
+[submodule "src/qdu2026_sentry_nav/pb_omni_pid_pursuit_controller"]
+	path = src/qdu2026_sentry_nav/pb_omni_pid_pursuit_controller
+	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb_omni_pid_pursuit_controller.git
+[submodule "src/qdu2026_sentry_nav/pb_nav2_plugins"]
+	path = src/qdu2026_sentry_nav/pb_nav2_plugins
+	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb_nav2_plugins.git
+[submodule "src/qdu2026_sentry_nav/pointcloud_to_laserscan"]
+	path = src/qdu2026_sentry_nav/pointcloud_to_laserscan
+	url = https://github.com/SMBU-PolarBear-Robotics-Team/pointcloud_to_laserscan.git
+[submodule "src/pb2025_robot_description"]
+	path = src/pb2025_robot_description
+	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_robot_description.git
 [submodule "src/pcd2pgm"]
 	path = src/pcd2pgm
 	url = https://github.com/LihanChen2004/pcd2pgm.git
-[submodule "livox_ros_driver2"]
-	path = src/qdu2026_sentry_nav/livox_ros_driver2
-	url = https://github.com/SMBU-PolarBear-Robotics-Team/livox_ros_driver2.git
-[submodule "pb_omni_pid_pursuit_controller"]
-	path = src/qdu2026_sentry_nav/pb_omni_pid_pursuit_controller
-	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb_omni_pid_pursuit_controller.git
-[submodule "pb_nav2_plugins"]
-	path = src/qdu2026_sentry_nav/pb_nav2_plugins
-	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb_nav2_plugins.git
-[submodule "pointcloud_to_laserscan"]
-	path = src/qdu2026_sentry_nav/pointcloud_to_laserscan
-	url = https://github.com/SMBU-PolarBear-Robotics-Team/pointcloud_to_laserscan.git
-[submodule "sdformat_tools"]
+[submodule "src/sdformat_tools"]
 	path = src/sdformat_tools
 	url = https://github.com/gezp/sdformat_tools.git
-[submodule "pb2025_robot_description"]
-	path = src/pb2025_robot_description
-	url = https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_robot_description.git
-
-	

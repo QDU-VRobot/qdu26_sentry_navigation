@@ -155,7 +155,38 @@ pip3 install xmacro
 - `odin_ros_driver`：Odin1 雷达驱动（重定位/里程计输出）
 - 本仓库
 
-### 4.3 编译
+### 4.3 拉取代码（含 submodule）
+
+本仓库内含多个 submodule（pb2025_robot_description / pcd2pgm / sdformat_tools / livox_ros_driver2 / pb_omni_pid_pursuit_controller / pb_nav2_plugins / pointcloud_to_laserscan）。**直接 `git clone` 不会把 submodule 拉下来**，必须用下面任一方式：
+
+方式一（推荐，一次到位）：
+
+```bash
+git clone --recurse-submodules https://github.com/QDU-VRobot/qdu26_sentry_navigation.git ~/codes/qdu26_sentry_mix
+cd ~/codes/qdu26_sentry_mix
+```
+
+方式二（已经 clone 过没拉 submodule）：
+
+```bash
+cd ~/codes/qdu26_sentry_mix
+git submodule update --init --recursive
+```
+
+之后想同步上游 submodule 的最新提交：
+
+```bash
+git submodule update --remote --merge
+```
+
+校验所有 submodule 都拉下来了：
+
+```bash
+git submodule status
+# 每行前面应该是 commit hash，没有 `-` 前缀；有 `-` 表示该 submodule 还没初始化
+```
+
+### 4.4 编译
 
 ```bash
 cd ~/codes/qdu26_sentry_mix
@@ -169,6 +200,9 @@ source install/setup.bash
 ---
 
 ## 5. 启动流程
+
+> 在启动之前，请修改 pb2025_robot_description，即机器人描述文件，修改内容可见原仓库
+
 
 ### 5.1 一键启动（推荐）
 
@@ -318,3 +352,4 @@ ros2 run nav2_map_server map_saver_cli -f <新世界名>
 - 上游开源：https://github.com/SMBU-PolarBear-Robotics-Team/qdu2026_sentry_nav
 - Odin1 官方资料：https://manifoldtechltd.github.io/wiki/odin_series/odin1/
 - Odin1 驱动代码: https://github.com/manifoldsdk/odin_ros_driver
+- ros2_libxr融合串口通信代码: https://github.com/QDU-VRobot/ROS2_LIBXR.git
