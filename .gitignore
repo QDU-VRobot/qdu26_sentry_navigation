@@ -5,3 +5,6 @@ log/
 .claude/
 .cache/
 *.pcd
+*.log
+src/pcd2pgm/
+src/sdformat_tools/

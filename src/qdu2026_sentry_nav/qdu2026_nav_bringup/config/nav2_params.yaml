@@ -22,7 +22,7 @@ pointcloud_fusion:
     allow_latest_tf_fallback: true
     tf_future_tolerance_sec: 0.30
     mid360_stamp_offset_sec: 0.0
-    max_sync_diff_sec: 0.11
+    max_sync_diff_sec: 0.15
     mid360_queue_size: 5
     publish_without_mid360: true
     publish_reliable: true
@@ -37,13 +37,13 @@ sensor_scan_generation:
     lidar_frame: "odin1_base_link"
     base_frame: "base_footprint"
     robot_base_frame: "gimbal_yaw"
-    yaw_compensation_factor: 0.25                # 补偿系数
-    velocity_filter_alpha: 0.28                  # IMU角速度低通滤波系数 (0~1)，越小越平滑
+    yaw_compensation_factor: 0.35                # 补偿系数
+    velocity_filter_alpha: 0.2                  # IMU角速度低通滤波系数 (0~1)，越小越平滑
 
 terrain_analysis:
   ros__parameters:
     scanVoxelSize: 0.1                 # 点云下采样
-    decayTime: 0.3                    # 点云时间差阈值 大于则不会被处理
+    decayTime: 0.15                    # 点云时间差阈值 大于则不会被处理
     noDecayDis: 0.0                     # 点云距离阈值 小于该阈值不考虑时间差
     clearingDis: 5.0                    # 该距离外的点会被清除
     useSorting: True                    # 这个参数开起来就能上坡了；如果 use_sorting,那么就以周围点中的分位点作为地面点，否则以最低点作为地面点；周围其余点相对于地面点的高度作为通过代价，所以对于坡面，有的点的代价是正，有的是负，就相互抵消了；不要与 consider_drop 同时开启，计算上会有冲突
@@ -72,7 +72,7 @@ terrain_analysis:
 terrain_analysis_ext:
   ros__parameters:
     scanVoxelSize: 0.1
-    decayTime: 0.3
+    decayTime: 0.15
     noDecayDis: 0.0
     clearingDis: 20.0
     useSorting: true
@@ -100,7 +100,7 @@ fake_vel_transform:
     input_cmd_vel_topic: "cmd_vel_nav2_result"
     output_cmd_vel_topic: "cmd_vel"
     cmd_spin_topic: "cmd_spin"
-    init_spin_speed: -0.5
+    init_spin_speed: 0.5
 
 pointcloud_to_laserscan:
   ros__parameters:
@@ -265,7 +265,7 @@ controller_server:
     use_sim_time: False
     robot_base_frame: gimbal_yaw_fake
     odom_topic: odometry
-    controller_frequency: 20.0
+    controller_frequency: 30.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
@@ -303,8 +303,8 @@ controller_server:
       use_rotate_to_heading_treshold: 0.1
       min_approach_linear_velocity: 0.1
       approach_velocity_scaling_dist: 2.0
-      v_linear_min: -1.0
-      v_linear_max: 1.0
+      v_linear_min: -0.7
+      v_linear_max: 0.7
       v_angular_min: -0.2
       v_angular_max: 0.2
       curvature_min: 0.4                                # 低曲率阈值，低于此值不减速。
@@ -361,7 +361,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 8.0
-        inflation_radius: 0.55
+        inflation_radius: 0.6
       always_send_full_costmap: False
 
 global_costmap:
@@ -409,7 +409,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 15.0
-        inflation_radius: 0.55
+        inflation_radius: 0.6
       always_send_full_costmap: False
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -499,8 +499,8 @@ velocity_smoother:
     scale_velocities: False
     feedback: "OPEN_LOOP"
     odom_duration: 0.1
-    min_velocity: [-1.0,-1.0 ,-0.6]
-    max_velocity: [1.0, 1.0, 0.6]
+    min_velocity: [-0.7,-0.7 ,-0.6]
+    max_velocity: [0.7, 0.7, 0.6]
     max_accel: [0.8, 0.8, 0.8]
     max_decel: [-1.5, -1.5, -1.0]
     odom_topic: "odometry"
@@ -509,9 +509,9 @@ velocity_smoother:
 
 approach_velocity_controller:
   ros__parameters:
-    slow_down_distance: 0.5
+    slow_down_distance: 0.15
     min_speed: 0.3
-    normal_speed: 1.0
+    normal_speed: 0.7
 
 
 

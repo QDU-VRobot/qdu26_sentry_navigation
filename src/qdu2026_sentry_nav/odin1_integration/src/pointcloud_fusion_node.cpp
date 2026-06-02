@@ -731,7 +731,8 @@ private:
     {
       std::lock_guard<std::mutex> lock(mutex_);
 
-      mid360_queue_.push_back(CachedCloud{frame_stamp_sec + mid360_stamp_offset_sec_, xyzi});
+      const double cache_stamp = stampToSec(this->now());
+      mid360_queue_.push_back(CachedCloud{cache_stamp, xyzi});
 
       while (mid360_queue_.size() > mid360_queue_size_) {
         mid360_queue_.pop_front();
@@ -946,8 +947,9 @@ private:
     double mid_stamp_sec = 0.0;
     double mid_dt = std::numeric_limits<double>::infinity();
 
+    const double match_stamp = stampToSec(this->now());
     const bool has_synced_mid = findClosestMid360(
-      odin_stamp_sec,
+      match_stamp,
       mid_cloud,
       mid_stamp_sec,
       mid_dt);
