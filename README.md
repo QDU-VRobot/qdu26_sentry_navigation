@@ -159,7 +159,7 @@ pip3 install xmacro
 
 本仓库内含多个 submodule（pb2025_robot_description / pcd2pgm / sdformat_tools / livox_ros_driver2 / pb_omni_pid_pursuit_controller / pb_nav2_plugins / pointcloud_to_laserscan）。**直接 `git clone` 不会把 submodule 拉下来**，必须用下面任一方式：
 
-方式一（推荐，一次到位）：
+方式一：
 
 ```bash
 git clone --recurse-submodules https://github.com/QDU-VRobot/qdu26_sentry_navigation.git ~/codes/qdu26_sentry_mix
@@ -171,19 +171,6 @@ cd ~/codes/qdu26_sentry_mix
 ```bash
 cd ~/codes/qdu26_sentry_mix
 git submodule update --init --recursive
-```
-
-之后想同步上游 submodule 的最新提交：
-
-```bash
-git submodule update --remote --merge
-```
-
-校验所有 submodule 都拉下来了：
-
-```bash
-git submodule status
-# 每行前面应该是 commit hash，没有 `-` 前缀；有 `-` 表示该 submodule 还没初始化
 ```
 
 ### 4.4 编译
@@ -204,7 +191,7 @@ source install/setup.bash
 > 在启动之前，请修改 pb2025_robot_description，即机器人描述文件，修改内容可见原仓库
 
 
-### 5.1 一键启动（推荐）
+### 5.1 一键启动
 
 ```bash
 cd ~/codes/qdu26_sentry_mix
