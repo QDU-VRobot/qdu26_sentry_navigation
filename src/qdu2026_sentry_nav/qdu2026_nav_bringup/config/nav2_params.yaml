@@ -100,7 +100,7 @@ fake_vel_transform:
     input_cmd_vel_topic: "cmd_vel_nav2_result"
     output_cmd_vel_topic: "cmd_vel"
     cmd_spin_topic: "cmd_spin"
-    init_spin_speed: 0.5
+    init_spin_speed: 0.0
 
 pointcloud_to_laserscan:
   ros__parameters:

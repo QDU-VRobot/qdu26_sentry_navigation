@@ -15,7 +15,6 @@ source /home/alis/codes/ros2_libxr/install/setup.bash
 source /home/alis/codes/qdu26_sentry_mix/install/setup.bash
 source /home/alis/codes/catkin_ws/install/setup.bash
 source ~/.bashrc
-export ROS_DOMAIN_ID=20
 
 echo "[1/5] 启动 ros2_libxr..."
 ros2 launch ros2_libxr ros2_libxr_launch.py &
